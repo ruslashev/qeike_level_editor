@@ -1,11 +1,12 @@
 #include "driver.hh"
 #include "imgui.hh"
 #include "utils.hh"
+#define GLEW_STATIC
 #include <GL/glew.h>
 #include "imgui/imgui.h"
 
-SDL_Window *g_window;
-SDL_GLContext glcontext;
+static SDL_Window *g_window;
+static SDL_GLContext glcontext;
 
 void driver_init() {
   assertf(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) == 0
@@ -29,23 +30,81 @@ void driver_init() {
   glClearColor(0.07f, 0.07f, 0.07f, 0.07f);
 }
 
-void driver_main_loop(void (*frame_cb)(void)) {
+static double get_time_in_seconds() {
+  return SDL_GetTicks() / 1000.;
+}
+
+void driver_main_loop(void (*frame_cb)(void)
+    , void (*update_cb)(double, double)
+    , void (*key_event_cb)(char, bool)
+    , void (*mouse_motion_event_cb)(float, float, int, int)
+    , void (*mouse_button_event_cb)(int, bool)
+    ) {
   bool done = false;
+  double t = 0, dt = 1. / 60., current_time = get_time_in_seconds()
+    , accumulator = 0;
+
   while (!done) {
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-      imgui_process_event(&event);
-      if (event.type == SDL_QUIT)
-        done = true;
+    double real_time = get_time_in_seconds()
+      , elapsed = real_time - current_time;
+    current_time = real_time;
+    accumulator += elapsed;
+
+    while (accumulator >= dt) {
+      SDL_Event event;
+      while (SDL_PollEvent(&event)) {
+        imgui_process_event(&event);
+        if (event.type == SDL_QUIT)
+          done = true;
+        else if ((event.type == SDL_KEYDOWN || event.type == SDL_KEYUP)
+            && event.key.repeat == 0) {
+          char key_info;
+          switch (event.key.keysym.sym) {
+            case SDLK_a: key_info = 'a'; break;
+            case SDLK_c: key_info = 'c'; break;
+            case SDLK_d: key_info = 'd'; break;
+            case SDLK_f: key_info = 'f'; break;
+            case SDLK_s: key_info = 's'; break;
+            case SDLK_w: key_info = 'w'; break;
+            case SDLK_x: key_info = 'x'; break;
+            case SDLK_z: key_info = 'z'; break;
+            default:     key_info = 0;
+          }
+          if (key_info != 0)
+            key_event_cb(key_info, event.type == SDL_KEYDOWN);
+        } else if (event.type == SDL_MOUSEMOTION)
+          mouse_motion_event_cb(static_cast<float>(event.motion.xrel)
+              , static_cast<float>(event.motion.yrel), event.motion.x
+              , event.motion.y);
+        else if (event.type == SDL_MOUSEBUTTONDOWN
+            || event.type == SDL_MOUSEBUTTONUP) {
+          int button;
+          switch (event.button.button) {
+            case SDL_BUTTON_LEFT:   button = 1; break;
+            case SDL_BUTTON_MIDDLE: button = 2; break;
+            case SDL_BUTTON_RIGHT:  button = 3; break;
+            case SDL_BUTTON_X1:     button = 4; break;
+            case SDL_BUTTON_X2:     button = 5; break;
+            default:                button = -1;
+          }
+          mouse_button_event_cb(button, event.type == SDL_MOUSEBUTTONDOWN);
+        }
+      }
+
+      update_cb(dt, t);
+
+      t += dt;
+      accumulator -= dt;
     }
+
+    glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x
+        , (int)ImGui::GetIO().DisplaySize.y);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     imgui_new_frame(g_window);
 
     frame_cb();
 
-    glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x
-        , (int)ImGui::GetIO().DisplaySize.y);
-    glClear(GL_COLOR_BUFFER_BIT);
     ImGui::Render();
     SDL_GL_SwapWindow(g_window);
   }

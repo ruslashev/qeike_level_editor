@@ -315,7 +315,7 @@ void imgui_new_frame(SDL_Window* window) {
   ImGui::NewFrame();
 }
 
-bool imgui_process_event(SDL_Event* event) {
+bool imgui_process_event(const SDL_Event* event) {
   ImGuiIO& io = ImGui::GetIO();
   switch (event->type) {
     case SDL_MOUSEWHEEL: {
