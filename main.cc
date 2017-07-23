@@ -9,9 +9,12 @@
 static const double fov = 60, dt = 1. / 60.;
 static int move = 0, strafe = 0;
 static camera *cam;
-static bool show_test_window = true;
+static bool show_test_window = false;
 static axis_drawer *ad;
 static grid_drawer *gd;
+static enum class editor_mode_t {
+  editing, lookaround
+} editor_mode = editor_mode_t::editing;
 
 static void load() {
   cam = new camera;
@@ -26,6 +29,17 @@ static void key_event(char key, bool down) {
     case 's': backward = down; break;
     case 'd': right    = down; break;
     case 'a': left     = down; break;
+    case '\t':
+      if (down) {
+        if (editor_mode == editor_mode_t::editing) {
+          driver_lock_mouse(); // bad
+          editor_mode = editor_mode_t::lookaround;
+        } else if (editor_mode == editor_mode_t::lookaround) {
+          driver_unlock_mouse();
+          editor_mode = editor_mode_t::editing;
+        }
+      }
+      break;
     default: break;
   }
   if (forward == backward)
@@ -43,7 +57,8 @@ static void key_event(char key, bool down) {
 }
 
 static void mouse_motion_event(float xrel, float yrel, int x, int y) {
-  // cam->update_view_angles(xrel, yrel);
+  if (editor_mode == editor_mode_t::lookaround)
+    cam->update_view_angles(xrel, yrel);
 }
 
 static void mouse_button_event(int button, bool down) {
@@ -54,13 +69,16 @@ static void update(double dt, double t) {
 }
 
 static void frame() {
-  static float f = 0.0f;
-  ImGui::Text("Hello, world!");
-  ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
-  if (ImGui::Button("Test Window")) show_test_window ^= 1;
-  ImGui::Text("Application average %.3f ms/frame (%.1f FPS)"
-      , (double)(1000.0f / ImGui::GetIO().Framerate)
-      , (double)ImGui::GetIO().Framerate);
+  if (ImGui::BeginMainMenuBar()) {
+    if (editor_mode == editor_mode_t::editing)
+      ImGui::TextColored(ImVec4(0.886f, 0.717f, 0.898f, 1.f), "Editing");
+    else if (editor_mode == editor_mode_t::lookaround)
+      ImGui::TextColored(ImVec4(0.886f, 0.898f, 0.717f, 1.f), "Lookaround");
+    ImGui::SameLine();
+    if (ImGui::SmallButton("Show test window"))
+      show_test_window = true;
+    ImGui::EndMainMenuBar();
+  }
 
   if (show_test_window) {
     ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
