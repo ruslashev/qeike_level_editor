@@ -290,3 +290,49 @@ void axis_drawer::draw(const glm::mat4 &mvp) {
   _vao.unbind();
 }
 
+grid_drawer::grid_drawer(int size, float density)
+  : _sp(shaders::simple_vert, shaders::simple_frag)
+  , _vertex_pos_attr(_sp.bind_attrib("vertex_pos"))
+  , _mvp_mat_unif(_sp.bind_uniform("mvp")) {
+  _vao.bind();
+  _vbo.bind();
+  _ebo.bind();
+  std::vector<float> verts;
+  for (int z = -size; z <= size; ++z)
+    for (int x = -size; x <= size; ++x) {
+      verts.push_back(x * density);
+      verts.push_back(0 * density);
+      verts.push_back(z * density);
+    }
+  _vbo.upload(verts);
+  const int width = size * 2 + 1, height = width;
+  std::vector<GLushort> elements;
+  for (int i = 0; i < width * height; ++i) {
+    if ((i % width) != width - 1) {
+      elements.push_back(i);
+      elements.push_back(i + 1);
+    }
+    if (i < width * height - width) {
+      elements.push_back(i);
+      elements.push_back(i + width);
+    }
+  }
+  _n_elements = elements.size();
+  _ebo.upload(elements);
+  glEnableVertexAttribArray(_vertex_pos_attr);
+  glVertexAttribPointer(_vertex_pos_attr, 3, GL_FLOAT, GL_FALSE
+      , 3 * sizeof(float), 0);
+  _vao.unbind();
+  _vbo.unbind();
+  _ebo.unbind();
+  glDisableVertexAttribArray(_vertex_pos_attr);
+}
+
+void grid_drawer::draw(const glm::mat4 &mvp) {
+  _vao.bind();
+  _sp.use_this_prog();
+  glUniformMatrix4fv(_mvp_mat_unif, 1, GL_FALSE, glm::value_ptr(mvp));
+  glDrawElements(GL_LINES, _n_elements, GL_UNSIGNED_SHORT, 0);
+  _vao.unbind();
+}
+

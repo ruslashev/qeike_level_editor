@@ -11,10 +11,12 @@ static int move = 0, strafe = 0;
 static camera *cam;
 static bool show_test_window = true;
 static axis_drawer *ad;
+static grid_drawer *gd;
 
 static void load() {
   cam = new camera;
   ad = new axis_drawer;
+  gd = new grid_drawer(10, 0.5f);
 }
 
 static void key_event(char key, bool down) {
@@ -72,11 +74,13 @@ static void frame() {
     , mvp = projection * view;
 
   ad->draw(mvp);
+  gd->draw(mvp);
 }
 
 static void cleanup() {
   delete cam;
   delete ad;
+  delete gd;
 }
 
 int main() {
