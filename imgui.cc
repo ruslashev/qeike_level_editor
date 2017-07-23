@@ -227,6 +227,8 @@ bool imgui_init(SDL_Window* window) {
 
   io.IniFilename = NULL;
 
+  io.Fonts->AddFontFromFileTTF("gudea.ttf", 19.0f);
+
 #ifdef _WIN32
   SDL_SysWMinfo wmInfo;
   SDL_VERSION(&wmInfo.version);
