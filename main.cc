@@ -15,6 +15,8 @@ static grid_drawer *gd;
 static enum class editor_mode_t {
   editing, lookaround
 } editor_mode = editor_mode_t::editing;
+static bool dragging = false;
+static float dragging_x = 0, dragging_y = 0;
 
 static void load() {
   cam = new camera;
@@ -32,7 +34,7 @@ static void key_event(char key, bool down) {
     case '\t':
       if (down) {
         if (editor_mode == editor_mode_t::editing) {
-          driver_lock_mouse(); // bad
+          driver_lock_mouse(); // TODO bad
           editor_mode = editor_mode_t::lookaround;
         } else if (editor_mode == editor_mode_t::lookaround) {
           driver_unlock_mouse();
@@ -59,9 +61,15 @@ static void key_event(char key, bool down) {
 static void mouse_motion_event(float xrel, float yrel, int x, int y) {
   if (editor_mode == editor_mode_t::lookaround)
     cam->update_view_angles(xrel, yrel);
+  if (dragging) {
+    dragging_x += xrel;
+    dragging_y += yrel;
+  }
 }
 
-static void mouse_button_event(int button, bool down) {
+static void mouse_button_event(int button, bool down, int x, int y) {
+  if (button == 1)
+    dragging = down;
 }
 
 static void update(double dt, double t) {
@@ -89,7 +97,9 @@ static void frame() {
     / (float)ImGui::GetIO().DisplaySize.y;
   glm::mat4 projection = glm::perspective((float)glm::radians(fov)
       , screen_aspect_ratio, 0.1f, 300.f), view = cam->compute_view_mat()
-    , mvp = projection * view;
+    , model = glm::rotate(glm::rotate(glm::mat4(), glm::radians(dragging_y)
+          , glm::vec3(1, 0, 0)), glm::radians(dragging_x), glm::vec3(0, 1, 0))
+    , mvp = projection * view * model;
 
   ad->draw(mvp);
   gd->draw(mvp);

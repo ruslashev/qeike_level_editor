@@ -41,7 +41,7 @@ void driver_main_loop(void (*frame_cb)(void)
     , void (*update_cb)(double, double)
     , void (*key_event_cb)(char, bool)
     , void (*mouse_motion_event_cb)(float, float, int, int)
-    , void (*mouse_button_event_cb)(int, bool)
+    , void (*mouse_button_event_cb)(int, bool, int, int)
     ) {
   bool done = false;
   double t = 0, dt = 1. / 60., current_time = get_time_in_seconds()
@@ -91,7 +91,8 @@ void driver_main_loop(void (*frame_cb)(void)
             case SDL_BUTTON_X2:     button = 5; break;
             default:                button = -1;
           }
-          mouse_button_event_cb(button, event.type == SDL_MOUSEBUTTONDOWN);
+          mouse_button_event_cb(button, event.type == SDL_MOUSEBUTTONDOWN
+              , event.motion.x, event.motion.y);
         }
       }
 
