@@ -48,7 +48,7 @@ public:
 struct shader {
   GLuint type;
   GLuint id;
-  shader(std::string source, GLuint ntype);
+  shader(const std::string &source, GLuint n_type);
   ~shader();
 };
 
@@ -57,13 +57,13 @@ class shader_program {
 public:
   GLuint id;
   shader_program(const shader &vert, const shader &frag);
-  shader_program(std::string vert_src, std::string frag_src);
+  shader_program(const std::string &vert_src, const std::string &frag_src);
   ~shader_program();
   GLint bind_attrib(const char *name);
   GLint bind_attrib_preserve_prog(const char *name);
   GLint bind_uniform(const char *name);
   GLint bind_uniform_preserve_prog(const char *name);
-  void use_this_prog();
+  void use_this_prog() const;
   void dont_use_this_prog();
 };
 

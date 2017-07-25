@@ -118,7 +118,7 @@ static std::string get_ogl_shader_err(GLint loglen
   return msgstr;
 }
 
-shader::shader(std::string source, GLuint ntype) : type(ntype) {
+shader::shader(const std::string &source, GLuint n_type) : type(n_type) {
   id = glCreateShader(type);
   const char *csrc = source.c_str();
   glShaderSource(id, 1, &csrc, NULL);
@@ -172,7 +172,8 @@ shader_program::shader_program(const shader &vert, const shader &frag) {
   _create_from_two_shaders(vert, frag);
 }
 
-shader_program::shader_program(std::string vert_src, std::string frag_src) {
+shader_program::shader_program(const std::string &vert_src
+    , const std::string &frag_src) {
   shader vert(vert_src, GL_VERTEX_SHADER), frag(frag_src, GL_FRAGMENT_SHADER);
   _create_from_two_shaders(vert, frag);
 }
@@ -183,7 +184,7 @@ shader_program::~shader_program() {
 
 GLint shader_program::bind_attrib(const char *name) {
   GLint attr = glGetAttribLocation(id, name);
-  assertf(glGetError() == GL_NO_ERROR, "failed to bind attribute %s", name);
+  gl_check_errors();
   if (attr == -1)
     warning("failed to bind attribute %s", name);
   return attr;
@@ -194,7 +195,7 @@ GLint shader_program::bind_attrib_preserve_prog(const char *name) {
   glGetIntegerv(GL_CURRENT_PROGRAM, &prev_active_prog);
   use_this_prog();
   GLint attr = glGetAttribLocation(id, name);
-  assertf(glGetError() == GL_NO_ERROR, "failed to bind attribute %s", name);
+  gl_check_errors();
   if (attr == -1)
     warning("failed to bind attribute %s", name);
   glUseProgram(static_cast<GLuint>(prev_active_prog));
@@ -203,7 +204,7 @@ GLint shader_program::bind_attrib_preserve_prog(const char *name) {
 
 GLint shader_program::bind_uniform(const char *name) {
   GLint unif = glGetUniformLocation(id, name);
-  assertf(glGetError() == GL_NO_ERROR, "failed to bind uniform %s", name);
+  gl_check_errors();
   if (unif == -1)
     warning("failed to bind uniform %s", name);
   return unif;
@@ -214,14 +215,14 @@ GLint shader_program::bind_uniform_preserve_prog(const char *name) {
   glGetIntegerv(GL_CURRENT_PROGRAM, &prev_active_prog);
   use_this_prog();
   GLint unif = glGetUniformLocation(id, name);
-  assertf(glGetError() == GL_NO_ERROR, "failed to bind uniform %s", name);
+  gl_check_errors();
   if (unif == -1)
     warning("failed to bind uniform %s", name);
   glUseProgram(static_cast<GLuint>(prev_active_prog));
   return unif;
 }
 
-void shader_program::use_this_prog() {
+void shader_program::use_this_prog() const {
   glUseProgram(id);
 }
 
