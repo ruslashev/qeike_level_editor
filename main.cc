@@ -1,9 +1,11 @@
+#include "brush.hh"
 #include "camera.hh"
 #include "driver.hh"
 #include "imgui.hh"
 #include "imgui/imgui.h"
-#include "utils.hh"
 #include "ogl.hh"
+#include "utils.hh"
+#include <memory>
 #include <GL/glew.h>
 
 static const double fov = 60, dt = 1. / 60.;
@@ -17,6 +19,7 @@ static enum class editor_mode_t {
 } editor_mode = editor_mode_t::editing;
 static bool dragging = false;
 static float dragging_x = 0, dragging_y = 0;
+std::vector<std::unique_ptr<brush>> brushes;
 
 static void load() {
   cam = new camera;
@@ -78,13 +81,22 @@ static void update(double dt, double t) {
 
 static void frame() {
   if (ImGui::BeginMainMenuBar()) {
-    if (editor_mode == editor_mode_t::editing)
-      ImGui::TextColored(ImVec4(0.886f, 0.717f, 0.898f, 1.f), "Editing");
-    else if (editor_mode == editor_mode_t::lookaround)
-      ImGui::TextColored(ImVec4(0.886f, 0.898f, 0.717f, 1.f), "Lookaround");
+    { // mode
+      if (editor_mode == editor_mode_t::editing)
+        ImGui::TextColored(ImVec4(0.886f, 0.717f, 0.898f, 1.f), "Editing");
+      else if (editor_mode == editor_mode_t::lookaround)
+        ImGui::TextColored(ImVec4(0.886f, 0.898f, 0.717f, 1.f), "Lookaround");
+    }
     ImGui::SameLine();
-    if (ImGui::SmallButton("Show test window"))
-      show_test_window = true;
+    { // new brush button
+      if (ImGui::SmallButton("New brush"))
+        brushes.push_back(std::unique_ptr<brush>(new brush));
+    }
+    ImGui::SameLine();
+    { // temp. show test window button
+      if (ImGui::SmallButton("Show test window"))
+        show_test_window = true;
+    }
     ImGui::EndMainMenuBar();
   }
 
@@ -103,6 +115,9 @@ static void frame() {
 
   ad->draw(mvp);
   gd->draw(mvp);
+
+  for (const std::unique_ptr<brush> &b : brushes)
+    b->draw(mvp);
 }
 
 static void cleanup() {
