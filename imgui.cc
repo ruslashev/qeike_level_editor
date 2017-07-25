@@ -123,6 +123,16 @@ static void imgui_set_clipboard_text(void*, const char* text) {
   SDL_SetClipboardText(text);
 }
 
+static void imgui_set_display_size(SDL_Window *window) {
+  ImGuiIO& io = ImGui::GetIO();
+  int w, h, display_w, display_h;
+  SDL_GetWindowSize(window, &w, &h);
+  SDL_GL_GetDrawableSize(window, &display_w, &display_h);
+  io.DisplaySize = ImVec2((float)w, (float)h);
+  io.DisplayFramebufferScale = ImVec2(w > 0 ? ((float)display_w / w) : 0
+      , h > 0 ? ((float)display_h / h) : 0);
+}
+
 static bool imgui_create_ogl_state() {
   const GLchar *vertex_shader =
     "#version 330\n"
@@ -229,6 +239,8 @@ bool imgui_init(SDL_Window* window) {
 
   io.Fonts->AddFontFromFileTTF("gudea.ttf", 19.0f);
 
+  imgui_set_display_size(window);
+
 #ifdef _WIN32
   SDL_SysWMinfo wmInfo;
   SDL_VERSION(&wmInfo.version);
@@ -278,17 +290,10 @@ void imgui_new_frame(SDL_Window* window) {
   if (!g_FontTexture)
     imgui_create_ogl_state();
 
-  ImGuiIO& io = ImGui::GetIO();
-
-  int w, h;
-  int display_w, display_h;
-  SDL_GetWindowSize(window, &w, &h);
-  SDL_GL_GetDrawableSize(window, &display_w, &display_h);
-  io.DisplaySize = ImVec2((float)w, (float)h);
-  io.DisplayFramebufferScale = ImVec2(w > 0 ? ((float)display_w / w) : 0
-      , h > 0 ? ((float)display_h / h) : 0);
+  imgui_set_display_size(window);
 
   float current_time = (float)SDL_GetTicks() / 1000.f;
+  ImGuiIO& io = ImGui::GetIO();
   io.DeltaTime = g_Time > 0.f ? current_time - g_Time : 1.f / 60.f;
   g_Time = current_time;
 
