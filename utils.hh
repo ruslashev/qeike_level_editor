@@ -38,5 +38,5 @@
   puts(""); \
 } while (0)
 
-#define _glsl(X) "#version 120\n" #X
+#define _glsl(X) "#version 140\n" #X
 

@@ -8,7 +8,7 @@
 #include <memory>
 #include <GL/glew.h>
 
-static const double fov = 60, dt = 1. / 60.;
+static const double fov = 45, dt = 1. / 60.;
 static int move = 0, strafe = 0;
 static camera *cam;
 static bool show_test_window = false;
@@ -24,7 +24,7 @@ std::vector<std::unique_ptr<brush>> brushes;
 static void load() {
   cam = new camera;
   ad = new axis_drawer;
-  gd = new grid_drawer(10, 0.5f);
+  gd = new grid_drawer(10, 1.f);
 }
 
 static void key_event(char key, bool down) {
@@ -117,7 +117,7 @@ static void frame() {
   gd->draw(mvp);
 
   for (const std::unique_ptr<brush> &b : brushes)
-    b->draw(mvp);
+    b->draw(cam->pos, model, view, projection);
 }
 
 static void cleanup() {
